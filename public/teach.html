@@ -1,0 +1,990 @@
+﻿<!DOCTYPE html>
+</html>
+    stage.appendChild(controls);
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Priya — AI Teacher</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<style>
+  :root{
+    --paper: #EAE2CC;
+    --paper-line: rgba(40,36,24,0.10);
+    --ink: #262319;
+    --ink-soft: #55503f;
+    --board: #1F3630;
+    --board-deep: #142822;
+    --chalk: #F1EDE0;
+    --chalk-dim: rgba(241,237,224,0.55);
+    --accent: #C1852B;
+    --accent-deep: #935f16;
+    --sage: #4F7A73;
+    --danger: #B3462C;
+    --success: #3F7A4F;
+    --radius: 3px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'IBM Plex Sans', sans-serif;
+    min-height:100vh;
+  }
+  h1,h2,h3,.display{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    letter-spacing:-0.01em;
+    color:var(--ink);
+    margin:0;
+  }
+  .app{max-width:1180px;margin:0 auto;padding:28px 24px 60px;}
+  .topbar{
+    display:flex;align-items:baseline;justify-content:space-between;
+    border-bottom:2px solid var(--ink);
+    padding-bottom:14px;margin-bottom:26px;flex-wrap:wrap;gap:10px;
+  }
+  .topbar .brand{display:flex;align-items:baseline;gap:10px;}
+  .topbar h1{font-size:28px;}
+  .topbar .tag{font-size:13px;color:var(--ink-soft);font-style:italic;}
+  .profile-note{font-size:12.5px;color:var(--ink-soft);text-align:right;max-width:320px;}
+  .profile-note button{
+    background:none;border:none;color:var(--accent-deep);text-decoration:underline;
+    cursor:pointer;font-size:12.5px;padding:0;font-family:inherit;
+  }
+
+  /* ---------- Setup card ---------- */
+  .setup-card{
+    background:
+      repeating-linear-gradient(var(--paper) 0px, var(--paper) 30px, var(--paper-line) 31px, var(--paper) 32px);
+    border:1px solid var(--paper-line);
+    border-left:3px solid var(--ink);
+    padding:26px 30px 30px;
+    max-width:760px;
+  }
+  .mode-toggle{display:flex;gap:0;margin-bottom:22px;border:1px solid var(--ink);width:fit-content;}
+  .mode-toggle button{
+    font-family:'IBM Plex Sans';font-size:14px;font-weight:500;
+    background:var(--paper);border:none;padding:9px 18px;cursor:pointer;color:var(--ink-soft);
+  }
+  .mode-toggle button.active{background:var(--ink);color:var(--paper);}
+  .field{margin-bottom:18px;}
+  .field label{
+    display:block;font-size:13px;color:var(--ink-soft);margin-bottom:6px;
+  }
+  .field textarea, .field input[type=text], .field input[type=number], .field select{
+    width:100%;font-family:inherit;font-size:15px;color:var(--ink);
+    background:transparent;border:none;border-bottom:1.5px solid var(--ink);
+    padding:7px 2px;outline:none;
+  }
+  .field textarea{resize:vertical;min-height:80px;line-height:1.5;}
+  .field textarea:focus,.field input:focus,.field select:focus{border-bottom-color:var(--accent-deep);}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+  .file-drop{
+    border:1.5px dashed var(--ink-soft);padding:14px;font-size:13.5px;color:var(--ink-soft);
+    display:flex;align-items:center;justify-content:space-between;gap:10px;cursor:pointer;
+  }
+  .file-drop:hover{border-color:var(--accent-deep);}
+  .file-name{font-size:12.5px;color:var(--accent-deep);margin-top:6px;}
+  .btn{
+    font-family:'IBM Plex Sans';font-size:14.5px;font-weight:500;
+    padding:11px 22px;border-radius:var(--radius);cursor:pointer;border:1.5px solid var(--ink);
+    background:var(--ink);color:var(--paper);
+  }
+  .btn:disabled{opacity:0.45;cursor:not-allowed;}
+  .btn.ghost{background:transparent;color:var(--ink);}
+  .btn.accent{background:var(--accent-deep);border-color:var(--accent-deep);color:var(--chalk);}
+  .btn.small{padding:7px 14px;font-size:13px;}
+  .hint{font-size:12.5px;color:var(--ink-soft);margin-top:-8px;margin-bottom:16px;}
+
+  /* ---------- Lesson stage ---------- */
+  .lesson-grid{display:grid;grid-template-columns:1.55fr 1fr;gap:18px;align-items:start;}
+  @media(max-width:880px){.lesson-grid{grid-template-columns:1fr;}}
+  .stage{
+    background:var(--board);color:var(--chalk);border-radius:var(--radius);
+    padding:26px 28px 22px;min-height:520px;position:relative;
+    box-shadow: inset 0 0 0 1px rgba(241,237,224,0.08);
+  }
+  .stage-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px;}
+  .stage-top .seg-kind{font-size:11.5px;color:var(--chalk-dim);text-transform:lowercase;}
+  .stage-top .seg-title{font-family:'Fraunces';font-size:19px;color:var(--chalk);}
+  .avatar-visual-row{display:flex;gap:22px;align-items:flex-start;flex-wrap:wrap;}
+  .avatar-wrap{flex:0 0 150px;text-align:center;}
+  .avatar-wrap .status{font-size:11px;color:var(--chalk-dim);margin-top:6px;height:14px;}
+  .visual-panel{
+    flex:1;min-width:220px;min-height:210px;background:var(--board-deep);
+    border-radius:2px;display:flex;align-items:center;justify-content:center;
+    padding:12px;
+  }
+  .visual-panel svg{max-width:100%;max-height:230px;}
+  .visual-placeholder{color:var(--chalk-dim);font-size:13px;font-style:italic;}
+  .caption-rail{
+    margin-top:20px;border-top:1px dashed rgba(241,237,224,0.25);padding-top:16px;
+    font-size:15.5px;line-height:1.85;white-space:pre-wrap;min-height:70px;
+  }
+  .stage-controls{display:flex;gap:10px;margin-top:18px;flex-wrap:wrap;}
+  .stage-controls .btn{background:var(--chalk);color:var(--board-deep);border-color:var(--chalk);}
+  .stage-controls .btn.ghost{background:transparent;color:var(--chalk);border-color:rgba(241,237,224,0.4);}
+  .question-card{
+    margin-top:18px;background:rgba(241,237,224,0.06);border:1px solid rgba(241,237,224,0.18);
+    padding:16px 18px;border-radius:2px;
+  }
+  .question-card .q-prompt{font-size:15px;margin-bottom:12px;}
+  .opt-btn{
+    display:block;width:100%;text-align:left;background:transparent;color:var(--chalk);
+    border:1px solid rgba(241,237,224,0.3);padding:9px 12px;margin-bottom:8px;cursor:pointer;
+    font-family:inherit;font-size:14px;border-radius:2px;
+  }
+  .opt-btn:hover{border-color:var(--accent);}
+  .opt-btn.chosen{border-color:var(--accent);background:rgba(193,133,43,0.15);}
+  .short-ans-row{display:flex;gap:8px;margin-top:6px;}
+  .short-ans-row input{
+    flex:1;background:transparent;border:1px solid rgba(241,237,224,0.3);color:var(--chalk);
+    padding:9px 10px;font-family:inherit;font-size:14px;border-radius:2px;
+  }
+  .feedback-box{margin-top:12px;font-size:14px;padding:10px 12px;border-radius:2px;}
+  .feedback-box.correct{background:rgba(63,122,79,0.18);border:1px solid var(--success);}
+  .feedback-box.incorrect{background:rgba(179,70,44,0.18);border:1px solid var(--danger);}
+
+  .followup-row{display:flex;gap:8px;margin-top:14px;}
+  .followup-row input{
+    flex:1;background:rgba(241,237,224,0.06);border:1px solid rgba(241,237,224,0.25);color:var(--chalk);
+    padding:9px 10px;font-family:inherit;font-size:13.5px;border-radius:2px;
+  }
+
+  /* ---------- Rail (right column) ---------- */
+  .rail-card{
+    border:1px solid var(--paper-line);border-left:3px solid var(--ink);
+    padding:16px 18px;margin-bottom:16px;background:var(--paper);
+  }
+  .rail-card h3{font-size:14px;color:var(--ink-soft);font-weight:500;font-family:'IBM Plex Sans';margin-bottom:10px;}
+  .seg-list{list-style:none;margin:0;padding:0;}
+  .seg-list li{
+    font-size:13.5px;padding:7px 0 7px 12px;border-left:2px solid var(--paper-line);color:var(--ink-soft);
+  }
+  .seg-list li.done{color:var(--sage);border-left-color:var(--sage);}
+  .seg-list li.active{color:var(--ink);border-left-color:var(--accent-deep);font-weight:500;}
+  .score-chip{font-size:13.5px;color:var(--ink-soft);}
+  .score-chip b{color:var(--ink);font-size:16px;}
+  .weak-tag{
+    display:inline-block;font-size:11.5px;background:rgba(179,70,44,0.12);color:var(--danger);
+    padding:2px 8px;margin:2px 4px 2px 0;border-radius:2px;
+  }
+  .strong-tag{
+    display:inline-block;font-size:11.5px;background:rgba(63,122,79,0.12);color:var(--success);
+    padding:2px 8px;margin:2px 4px 2px 0;border-radius:2px;
+  }
+
+  /* ---------- Report ---------- */
+  .report-card{
+    background:var(--paper);border:1px solid var(--paper-line);border-left:3px solid var(--ink);
+    padding:28px 30px;max-width:760px;
+  }
+  .report-score{font-family:'Fraunces';font-size:52px;color:var(--accent-deep);line-height:1;}
+  .report-grid{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin:20px 0;}
+  .report-grid h4{font-size:13px;color:var(--ink-soft);font-weight:500;margin-bottom:8px;}
+  .notes-list{margin:0;padding-left:18px;}
+  .notes-list li{margin-bottom:6px;font-size:14.5px;line-height:1.5;}
+
+  .loading-line{font-size:13.5px;color:var(--chalk-dim);font-style:italic;}
+  .path-list{list-style:none;margin:0;padding:0;}
+  .path-list li{
+    border-bottom:1px solid var(--paper-line);padding:14px 4px;display:flex;justify-content:space-between;align-items:center;gap:10px;
+  }
+  .path-list .d-title{font-size:15px;}
+  .path-list .d-desc{font-size:12.5px;color:var(--ink-soft);margin-top:3px;}
+
+  ::selection{background:var(--accent);color:var(--chalk);}
+  .visually-hidden{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);}
+</style>
+</head>
+<body>
+<div class="app" id="app"></div>
+
+<script>
+/* ============================= CONFIG ============================= */
+const LANGUAGES = [
+  {label:"English", code:"en-US"},
+  {label:"Hindi", code:"hi-IN"},
+  {label:"Hinglish (Hindi + English)", code:"hi-IN"},
+  {label:"Tamil", code:"ta-IN"},
+  {label:"Telugu", code:"te-IN"},
+  {label:"Marathi", code:"mr-IN"},
+  {label:"Bengali", code:"bn-IN"},
+  {label:"Spanish", code:"es-ES"},
+  {label:"French", code:"fr-FR"},
+  {label:"German", code:"de-DE"},
+  {label:"Arabic", code:"ar-SA"},
+  {label:"Japanese", code:"ja-JP"},
+];
+const LEVELS = ["beginner","intermediate","advanced"];
+const TIME_OPTIONS = [
+  {label:"5 minutes", value:5},
+  {label:"20 minutes", value:20},
+  {label:"60 minutes", value:60},
+  {label:"7-day plan", value:10080},
+];
+
+/* ============================= STATE ============================= */
+const state = {
+  screen: "setup",          // setup | path | lesson | assessment | report
+  mode: "material",         // material | topic
+  materialText: "",
+  materialChunks: [],
+  materialFileName: "",
+  topic: "",
+  profile: { level: "beginner", minutes: 20, language: "English", langCode: "en-US", style: "" },
+  effectiveLevel: "beginner",
+  outline: [],              // [{id,title,kind}]
+  segmentIdx: 0,
+  segmentCache: {},         // id -> content json
+  segmentStatus: [],        // "pending"|"done"
+  speaking: false,
+  currentAnswerChoice: null,
+  currentFeedback: null,
+  scoreLog: [],             // {conceptTag, correct}
+  weakConcepts: {},
+  strongConcepts: {},
+  memoryLine: "",
+  learningPath: null,       // {days:[...]}
+  finalQuiz: null,
+  finalAnswers: {},
+  report: null,
+  loadingMsg: "",
+  errorMsg: "",
+  learnerProfileStore: null,
+};
+
+/* ============================= CLAUDE HELPER ============================= */
+async function callClaude(system, user, {retries=1} = {}){
+  for (let attempt=0; attempt<=retries; attempt++){
+    try{
+      const res = await fetch("/api/teach", {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({system, user}),
+      });
+      const json = await res.json();
+      if (json && json.error) throw new Error(json.error);
+      return json;
+    }catch(err){
+      if (attempt === retries) throw err;
+    }
+  }
+}
+
+/* ============================= MATERIAL PROCESSING (RAG-lite) ============================= */
+function chunkText(text, size=700){
+  const words = text.split(/\s+/);
+  const chunks = [];
+  for (let i=0;i<words.length;i+=size){
+    chunks.push(words.slice(i, i+size).join(" "));
+  }
+  return chunks.filter(c => c.trim().length > 0);
+}
+
+function scoreChunk(query, chunk){
+  const qWords = query.toLowerCase().match(/[a-z0-9]+/g) || [];
+  const cLower = chunk.toLowerCase();
+  let score = 0;
+  for (const w of qWords){
+    if (w.length < 3) continue;
+    const occurrences = cLower.split(w).length - 1;
+    score += occurrences;
+  }
+  return score;
+}
+
+function retrieveTopChunks(query, k=3){
+  if (state.materialChunks.length === 0) return [];
+  const scored = state.materialChunks.map((c,i)=>({i, c, s:scoreChunk(query,c)}));
+  scored.sort((a,b)=>b.s-a.s);
+  const top = scored.slice(0,k).filter(x=>x.s>0);
+  if (top.length === 0) return state.materialChunks.slice(0,k); // fallback: first chunks
+  return top.map(x=>x.c);
+}
+
+async function extractMaterialText(file){
+  const name = file.name.toLowerCase();
+  if (name.endsWith(".txt") || name.endsWith(".md")){
+    return await file.text();
+  }
+  if (name.endsWith(".pdf")){
+    if (!window.pdfjsLib) throw new Error("PDF reader failed to load. Paste the text instead.");
+    pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+    const buf = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({data:buf}).promise;
+    let full = "";
+    for (let p=1;p<=pdf.numPages;p++){
+      const page = await pdf.getPage(p);
+      const content = await page.getTextContent();
+      full += content.items.map(it=>it.str).join(" ") + "\n";
+    }
+    return full;
+  }
+  if (name.endsWith(".docx")){
+    if (!window.mammoth) throw new Error("DOCX reader failed to load. Paste the text instead.");
+    const buf = await file.arrayBuffer();
+    const result = await mammoth.extractRawText({arrayBuffer: buf});
+    return result.value;
+  }
+  throw new Error("Unsupported file type. Use .txt, .pdf, or .docx — or paste the text directly.");
+}
+
+/* ============================= LEARNER PROFILE STORAGE ============================= */
+async function loadLearnerProfile(){
+  try{
+    const raw = localStorage.getItem("learner_profile");
+    state.learnerProfileStore = raw ? JSON.parse(raw) : null;
+  }catch(e){
+    state.learnerProfileStore = null;
+  }
+}
+async function saveLearnerProfile(record){
+  const existing = state.learnerProfileStore || {topicsStudied:[], weakConcepts:{}, strongConcepts:{}};
+  existing.topicsStudied.unshift(record);
+  existing.topicsStudied = existing.topicsStudied.slice(0,20);
+  for (const w of Object.keys(state.weakConcepts)) existing.weakConcepts[w] = (existing.weakConcepts[w]||0)+state.weakConcepts[w];
+  for (const s of Object.keys(state.strongConcepts)) existing.strongConcepts[s] = (existing.strongConcepts[s]||0)+state.strongConcepts[s];
+  state.learnerProfileStore = existing;
+  try{ localStorage.setItem("learner_profile", JSON.stringify(existing)); }catch(e){ /* non-fatal */ }
+}
+async function resetLearnerProfile(){
+  try{ localStorage.removeItem("learner_profile"); }catch(e){}
+  state.learnerProfileStore = null;
+  render();
+}
+
+/* ============================= SPEECH ============================= */
+let voicesCache = [];
+function loadVoices(){
+  voicesCache = window.speechSynthesis ? window.speechSynthesis.getVoices() : [];
+}
+if (window.speechSynthesis){
+  window.speechSynthesis.onvoiceschanged = loadVoices;
+  loadVoices();
+}
+function pickVoice(langCode){
+  const prefix = langCode.split("-")[0];
+  const candidates = voicesCache.filter(v=>v.lang && v.lang.toLowerCase().startsWith(prefix));
+  if (candidates.length === 0) return null;
+  const femaleHints = /female|woman|zira|samantha|susan|victoria|karen|moira|tessa|fiona|amelia|joanna|salli|kendra|kimberly|ivy|priya|neerja|swara|heera|lekha|ananya|aditi/i;
+  const maleHints = /male|man|david|mark|guy|daniel|george|james|fred|rishi/i;
+  let pick = candidates.find(v=>femaleHints.test(v.name));
+  if (!pick) pick = candidates.find(v=>!maleHints.test(v.name));
+  if (!pick) pick = candidates[0];
+  return pick;
+}
+function speak(text, langCode, onStart, onEnd){
+  if (!window.speechSynthesis){ onEnd && onEnd(); return; }
+  window.speechSynthesis.cancel();
+  const utter = new SpeechSynthesisUtterance(text);
+  const v = pickVoice(langCode);
+  if (v) utter.voice = v;
+  utter.lang = langCode;
+  utter.rate = 0.98;
+  utter.onstart = () => onStart && onStart();
+  utter.onend = () => onEnd && onEnd();
+  utter.onerror = () => onEnd && onEnd();
+  window.speechSynthesis.speak(utter);
+}
+
+/* ============================= PROMPT BUILDERS ============================= */
+function langName(){ return state.profile.language; }
+
+async function generateOutline(){
+  state.loadingMsg = "Reading your material and planning the lesson…";
+  render();
+  let contextPreview = "";
+  if (state.mode === "material"){
+    contextPreview = state.materialChunks.slice(0,12).map((c,i)=>`[chunk ${i}] ${c.slice(0,140)}`).join("\n");
+  }
+  const budget = segmentBudget(state.profile.minutes);
+  const system = `You are an expert curriculum designer for an AI teaching system. Respond with ONLY valid JSON, no markdown fences, no commentary. JSON shape:
+{"topicSummary": string, "segments": [{"id": string, "title": string, "kind": "concept"|"example"|"question"|"synthesis"}]}
+Rules: produce exactly ${budget} segments. Titles under 8 words, in ${langName()}. Order segments so understanding builds progressively. Include at least 2 segments of kind "question" spread through the lesson, and end with one "synthesis" segment.`;
+  const user = state.mode === "material"
+    ? `Uploaded material previews:\n${contextPreview}\n\nLearner: level=${state.profile.level}, language=${langName()}, time=${state.profile.minutes} minutes, style notes="${state.profile.style}".\nBuild a lesson outline grounded in this material.`
+    : `Topic to teach: "${state.topic}"\nLearner: level=${state.profile.level}, language=${langName()}, time=${state.profile.minutes} minutes, style notes="${state.profile.style}".\nBuild a lesson outline for this topic from the appropriate starting point for this level.`;
+  const json = await callClaude(system, user);
+  state.outline = json.segments || [];
+  state.segmentStatus = state.outline.map(()=>"pending");
+  state.loadingMsg = "";
+}
+
+function segmentBudget(minutes){
+  if (minutes <= 5) return 3;
+  if (minutes <= 20) return 5;
+  return 8;
+}
+
+async function generateLearningPath(){
+  state.loadingMsg = "Designing your 7-day learning path…";
+  render();
+  const system = `You design multi-day learning paths. Respond ONLY valid JSON: {"days":[{"day":number,"title":string,"description":string}]}. Produce 7 entries, titles under 8 words, descriptions under 20 words, in ${langName()}.`;
+  const user = state.mode === "material"
+    ? `Base the path on this material:\n${state.materialChunks.slice(0,10).map(c=>c.slice(0,140)).join("\n")}\nLearner level: ${state.profile.level}.`
+    : `Topic: "${state.topic}". Learner level: ${state.profile.level}.`;
+  const json = await callClaude(system, user);
+  state.learningPath = json;
+  state.loadingMsg = "";
+}
+
+async function generateSegmentContent(segment){
+  state.loadingMsg = "Preparing this part of the lesson…";
+  render();
+  let context = "";
+  if (state.mode === "material"){
+    const top = retrieveTopChunks(segment.title, 2);
+    context = top.map(c=>c.slice(0,900)).join("\n---\n");
+  }
+  const system = `You are an AI teacher delivering ONE segment of a live lesson. Respond with ONLY valid JSON, no markdown fences:
+{"narration": string, "onScreenText": string, "visual": {"type": "diagram"|"formula"|"code"|"timeline"|"none", "svg": string|null, "caption": string}, "question": {"type":"mcq"|"short"|"none","prompt": string,"options": [string]|null,"correctAnswer": string,"conceptTag": string}}
+Rules:
+- narration: 60-110 words, warm and human, spoken aloud, in ${langName()}.
+- onScreenText: 3-5 short lines separated by \\n, in ${langName()}.
+- If context is provided below, ground the explanation ONLY in it; if the context does not cover something, say so honestly rather than inventing facts.
+- Match depth to level "${state.effectiveLevel}".
+- visual.svg: only produce it when a visual genuinely helps (diagram/formula/code/timeline). If produced, it MUST be a small valid inline SVG string starting with "<svg" using viewBox="0 0 420 240", stroke/fill colors only from: #F1EDE0, #C1852B, #4F7A73, #935f16. No <script> or <foreignObject> tags ever. If not needed, set type "none" and svg null.
+- question: only include a real question if segment kind is "question" or "synthesis"; otherwise set type "none".`;
+  const user = `Segment title: "${segment.title}"\nSegment kind: ${segment.kind}\nRecent lesson memory: ${state.memoryLine || "(lesson just started)"}\nContext (may be empty):\n${context}`;
+  const json = await callClaude(system, user);
+  state.loadingMsg = "";
+  return json;
+}
+
+async function evaluateAnswer(question, studentAnswer){
+  state.loadingMsg = "Checking your answer…";
+  render();
+  const system = `You evaluate a student's answer during a live lesson to catch misconceptions. Respond ONLY valid JSON:
+{"correct": boolean, "feedback": string, "misconception": string|null, "action": "continue"|"reexplain"|"simplify_remaining"|"advance_remaining"}
+feedback: 2-3 encouraging sentences, in ${langName()}. If wrong, name the likely misconception plainly rather than just saying "incorrect".`;
+  const user = `Question: ${question.prompt}\nExpected answer: ${question.correctAnswer}\nConcept: ${question.conceptTag}\nStudent's answer: "${studentAnswer}"\nCurrent level: ${state.effectiveLevel}`;
+  const json = await callClaude(system, user);
+  state.loadingMsg = "";
+  return json;
+}
+
+async function generateReExplanation(segment, misconception){
+  const system = `You are re-explaining a concept the student misunderstood. Respond ONLY valid JSON, same shape as a lesson segment:
+{"narration": string, "onScreenText": string, "visual": {"type":"diagram"|"formula"|"code"|"timeline"|"none","svg": string|null,"caption": string}, "question": {"type":"none","prompt":"","options":null,"correctAnswer":"","conceptTag":""}}
+Use a DIFFERENT analogy and a new example than before. Do not repeat the same wording. Keep it short (50-90 words), in ${langName()}, at level "${state.effectiveLevel}".`;
+  const user = `Original segment: "${segment.title}"\nMisconception detected: ${misconception}`;
+  return await callClaude(system, user);
+}
+
+async function answerFollowUp(question){
+  const system = `Answer the student's spontaneous question during a live lesson, staying grounded in the lesson so far. Respond ONLY valid JSON: {"answer": string}. Keep it under 90 words, in ${langName()}.`;
+  const user = `Lesson memory so far: ${state.memoryLine}\nStudent's question: "${question}"`;
+  return await callClaude(system, user);
+}
+
+async function generateFinalQuiz(){
+  state.loadingMsg = "Putting together your final check…";
+  render();
+  const concepts = state.outline.map(s=>s.title).join(", ");
+  const system = `Create a short final assessment. Respond ONLY valid JSON: {"questions":[{"id":string,"type":"mcq"|"short","prompt":string,"options":[string]|null,"correctAnswer":string,"conceptTag":string}]}. Produce exactly 4 questions covering the concepts below, in ${langName()}, at level "${state.effectiveLevel}".`;
+  const user = `Concepts taught: ${concepts}`;
+  const json = await callClaude(system, user);
+  state.finalQuiz = json.questions || [];
+  state.loadingMsg = "";
+}
+
+async function generateReport(){
+  state.loadingMsg = "Writing your learning report…";
+  render();
+  const total = state.scoreLog.length;
+  const correct = state.scoreLog.filter(s=>s.correct).length;
+  const scoreVal = total > 0 ? Math.round((correct/total)*100) : 0;
+  const system = `Generate a personalized learning report. Respond ONLY valid JSON:
+{"strengths": [string], "weakAreas": [string], "recommendation": string, "nextTopic": string, "notes": [string]}
+Use the exact score value given — do not recalculate it. strengths/weakAreas: short concept names. notes: 3-5 concise revision bullets. Everything in ${langName()}.`;
+  const user = `Topic: ${state.mode==="material" ? (state.outline[0]?.title||"uploaded material") : state.topic}\nFinal score: ${scoreVal}%\nPer-question log: ${JSON.stringify(state.scoreLog)}`;
+  const json = await callClaude(system, user);
+  json.score = scoreVal;
+  state.report = json;
+  state.loadingMsg = "";
+  await saveLearnerProfile({
+    topic: state.mode==="material" ? (state.materialFileName || "Uploaded material") : state.topic,
+    date: new Date().toISOString().slice(0,10),
+    score: scoreVal,
+  });
+}
+
+/* ============================= FLOW CONTROL ============================= */
+function stepEffectiveLevel(direction){
+  const idx = LEVELS.indexOf(state.effectiveLevel);
+  const next = direction === "up" ? Math.min(idx+1, LEVELS.length-1) : Math.max(idx-1, 0);
+  state.effectiveLevel = LEVELS[next];
+}
+
+async function beginLesson(){
+  state.effectiveLevel = state.profile.level;
+  try{
+    await generateOutline();
+    state.screen = "lesson";
+    await goToSegment(0);
+  }catch(e){
+    state.errorMsg = "Could not generate the lesson outline. " + e.message;
+  }
+  render();
+}
+
+async function goToSegment(idx){
+  state.segmentIdx = idx;
+  state.currentAnswerChoice = null;
+  state.currentFeedback = null;
+  if (idx >= state.outline.length){
+    await finishLessonSegments();
+    return;
+  }
+  const seg = state.outline[idx];
+  if (!state.segmentCache[seg.id]){
+    try{
+      const content = await generateSegmentContent(seg);
+      state.segmentCache[seg.id] = content;
+      state.memoryLine = (state.memoryLine + " -> " + seg.title).slice(-400);
+    }catch(e){
+      state.errorMsg = "Could not generate this segment. " + e.message;
+      render();
+      return;
+    }
+  }
+  render();
+  playCurrentSegment();
+}
+
+function playCurrentSegment(){
+  const seg = state.outline[state.segmentIdx];
+  const content = state.segmentCache[seg.id];
+  if (!content) return;
+  state.speaking = true;
+  render();
+  speak(content.narration, state.profile.langCode,
+    ()=>{ state.speaking = true; render(); },
+    ()=>{ state.speaking = false; render(); }
+  );
+}
+
+async function submitAnswer(question, answer){
+  try{
+    const evalResult = await evaluateAnswer(question, answer);
+    state.currentFeedback = evalResult;
+    state.scoreLog.push({conceptTag: question.conceptTag, correct: evalResult.correct});
+    if (evalResult.correct){
+      state.strongConcepts[question.conceptTag] = (state.strongConcepts[question.conceptTag]||0)+1;
+    }else{
+      state.weakConcepts[question.conceptTag] = (state.weakConcepts[question.conceptTag]||0)+1;
+    }
+    if (evalResult.action === "advance_remaining") stepEffectiveLevel("up");
+    if (evalResult.action === "simplify_remaining") stepEffectiveLevel("down");
+    render();
+    if (evalResult.action === "reexplain"){
+      const seg = state.outline[state.segmentIdx];
+      const reexp = await generateReExplanation(seg, evalResult.misconception || question.conceptTag);
+      state.segmentCache[seg.id + "_re"] = reexp;
+      state.outline.splice(state.segmentIdx+1, 0, {id: seg.id+"_re", title: "Re-explaining: "+seg.title, kind:"concept"});
+      state.segmentStatus.splice(state.segmentIdx+1, 0, "pending");
+    }
+  }catch(e){
+    state.errorMsg = "Could not evaluate the answer. " + e.message;
+    render();
+  }
+}
+
+async function finishLessonSegments(){
+  state.screen = "assessment";
+  try{
+    await generateFinalQuiz();
+  }catch(e){
+    state.errorMsg = "Could not build the final quiz. " + e.message;
+  }
+  render();
+}
+
+async function submitFinalQuiz(){
+  for (const q of state.finalQuiz){
+    const ans = state.finalAnswers[q.id];
+    if (ans === undefined) continue;
+    const correct = String(ans).trim().toLowerCase() === String(q.correctAnswer).trim().toLowerCase()
+      || (q.type === "mcq" && String(ans).trim().toLowerCase() === String(q.correctAnswer).trim().toLowerCase());
+    state.scoreLog.push({conceptTag: q.conceptTag, correct});
+    if (correct) state.strongConcepts[q.conceptTag] = (state.strongConcepts[q.conceptTag]||0)+1;
+    else state.weakConcepts[q.conceptTag] = (state.weakConcepts[q.conceptTag]||0)+1;
+  }
+  state.screen = "report";
+  try{
+    await generateReport();
+  }catch(e){
+    state.errorMsg = "Could not generate the report. " + e.message;
+  }
+  render();
+}
+
+/* ============================= RENDER HELPERS ============================= */
+function sanitizeSvg(svg){
+  if (!svg) return null;
+  if (!/^\s*<svg/i.test(svg)) return null;
+  if (/<script/i.test(svg) || /foreignObject/i.test(svg)) return null;
+  return svg;
+}
+
+function el(tag, attrs={}, children=[]){
+  const e = document.createElement(tag);
+  for (const [k,v] of Object.entries(attrs)){
+    if (v === null || v === undefined) continue;
+    if (k === "class") e.className = v;
+    else if (k === "html") e.innerHTML = v;
+    else if (k.startsWith("on")) e.addEventListener(k.slice(2), v);
+    else e.setAttribute(k, v);
+  }
+  for (const c of [].concat(children)){
+    if (c === null || c === undefined) continue;
+    e.appendChild(typeof c === "string" ? document.createTextNode(c) : c);
+  }
+  return e;
+}
+
+function avatarSvg(speaking){
+  return `<svg viewBox="0 0 150 150" width="140" height="140">
+    <circle cx="75" cy="70" r="52" fill="none" stroke="var(--chalk)" stroke-width="2"/>
+    <circle cx="56" cy="62" r="4.5" fill="var(--chalk)" class="eye"/>
+    <circle cx="94" cy="62" r="4.5" fill="var(--chalk)" class="eye"/>
+    <path d="M50 48 Q56 42 63 48" stroke="var(--chalk)" stroke-width="1.5" fill="none"/>
+    <path d="M87 48 Q94 42 100 48" stroke="var(--chalk)" stroke-width="1.5" fill="none"/>
+    <ellipse cx="75" cy="${speaking ? 94 : 90}" rx="${speaking ? 16 : 13}" ry="${speaking ? 9 : 3}" fill="none" stroke="var(--accent)" stroke-width="2.5"/>
+    <path d="M23 78 Q75 130 127 78" stroke="var(--chalk)" stroke-width="1.5" fill="none" opacity="0.5"/>
+  </svg>`;
+}
+
+/* ============================= SCREENS ============================= */
+function renderTopbar(){
+  const bar = el("div", {class:"topbar"});
+  bar.appendChild(el("div", {class:"brand"}, [
+    el("h1", {}, "Priya"),
+    el("span", {class:"tag"}, "an AI teacher that plans, explains, questions & adapts"),
+  ]));
+  const note = el("div", {class:"profile-note"});
+  if (state.learnerProfileStore && state.learnerProfileStore.topicsStudied.length){
+    const last = state.learnerProfileStore.topicsStudied[0];
+    note.appendChild(document.createTextNode(`Last session: "${last.topic}" — ${last.score}%`));
+    note.appendChild(document.createElement("br"));
+    note.appendChild(el("button", {onclick: resetLearnerProfile}, "clear learning history"));
+  }
+  bar.appendChild(note);
+  return bar;
+}
+
+function renderSetup(){
+  const wrap = document.createDocumentFragment();
+  const card = el("div", {class:"setup-card"});
+
+  const toggle = el("div", {class:"mode-toggle"});
+  const btnMaterial = el("button", {class: state.mode==="material" ? "active":"", onclick: ()=>{state.mode="material";render();}}, "Teach from my material");
+  const btnTopic = el("button", {class: state.mode==="topic" ? "active":"", onclick: ()=>{state.mode="topic";render();}}, "Teach me a topic");
+  toggle.appendChild(btnMaterial); toggle.appendChild(btnTopic);
+  card.appendChild(toggle);
+
+  if (state.mode === "material"){
+    const drop = el("label", {class:"file-drop"}, [
+      document.createTextNode(state.materialFileName || "Upload .txt, .pdf or .docx"),
+      el("span", {}, "browse"),
+    ]);
+    const fileInput = el("input", {type:"file", accept:".txt,.pdf,.docx,.md", class:"visually-hidden", onchange: async (e)=>{
+      const f = e.target.files[0];
+      if (!f) return;
+      state.materialFileName = f.name;
+      render();
+      try{
+        const text = await extractMaterialText(f);
+        state.materialText = text;
+        state.materialChunks = chunkText(text);
+        state.errorMsg = "";
+      }catch(err){
+        state.errorMsg = err.message;
+      }
+      render();
+    }});
+    drop.appendChild(fileInput);
+    card.appendChild(el("div", {class:"field"}, drop));
+    card.appendChild(el("div", {class:"hint"}, "Or paste the text directly below (chapter, notes, article…)."));
+    card.appendChild(el("div", {class:"field"}, [
+      el("label", {}, "Paste material"),
+      el("textarea", {placeholder:"Paste chapter text, notes, or any educational content…", oninput: (e)=>{
+        state.materialText = e.target.value;
+        state.materialChunks = chunkText(e.target.value);
+      }}, state.materialText),
+    ]));
+  } else {
+    card.appendChild(el("div", {class:"field"}, [
+      el("label", {}, "What should I teach you?"),
+      el("input", {type:"text", placeholder:'e.g. "Newton\'s Laws for a Class 8 student" or "React for a technical interview"', value: state.topic, oninput:(e)=>{state.topic=e.target.value;}}),
+    ]));
+  }
+
+  const row = el("div", {class:"row2"});
+  const levelField = el("div", {class:"field"}, [
+    el("label", {}, "Your level"),
+    el("select", {onchange:(e)=>{state.profile.level=e.target.value;}}, LEVELS.map(l=>el("option",{value:l, selected: l===state.profile.level ? "selected": null}, l))),
+  ]);
+  const timeField = el("div", {class:"field"}, [
+    el("label", {}, "Time available"),
+    el("select", {onchange:(e)=>{state.profile.minutes=Number(e.target.value);}}, TIME_OPTIONS.map(t=>el("option",{value:t.value, selected: t.value===state.profile.minutes ? "selected": null}, t.label))),
+  ]);
+  row.appendChild(levelField); row.appendChild(timeField);
+  card.appendChild(row);
+
+  const row2 = el("div", {class:"row2"});
+  const langField = el("div", {class:"field"}, [
+    el("label", {}, "Teaching language"),
+    el("select", {onchange:(e)=>{
+      const opt = LANGUAGES[e.target.selectedIndex];
+      state.profile.language = opt.label; state.profile.langCode = opt.code;
+    }}, LANGUAGES.map((l,i)=>el("option",{value:i, selected: l.label===state.profile.language ? "selected": null}, l.label))),
+  ]);
+  const styleField = el("div", {class:"field"}, [
+    el("label", {}, "Anything else? (optional)"),
+    el("input", {type:"text", placeholder:"e.g. use simple examples, focus on exam prep", value:state.profile.style, oninput:(e)=>{state.profile.style=e.target.value;}}),
+  ]);
+  row2.appendChild(langField); row2.appendChild(styleField);
+  card.appendChild(row2);
+
+  const startBtn = el("button", {class:"btn accent", onclick: async ()=>{
+    const ready = (state.mode==="material" && state.materialChunks.length>0) || (state.mode==="topic" && state.topic.trim().length>0);
+    if (!ready){
+      state.errorMsg = state.mode==="material" ? "Please upload or paste some material first." : "Please type a topic first.";
+      render();
+      return;
+    }
+    state.errorMsg = "";
+    if (state.profile.minutes === 10080){
+      state.screen = "path";
+      try{ await generateLearningPath(); }catch(e){ state.errorMsg = "Could not build the plan. "+e.message; }
+      render();
+    } else {
+      await beginLesson();
+    }
+  }}, state.profile.minutes===10080 ? "Build my 7-day plan" : "Start lesson");
+  card.appendChild(startBtn);
+
+  if (state.loadingMsg) card.appendChild(el("p", {class:"hint"}, state.loadingMsg));
+  if (state.errorMsg) card.appendChild(el("p", {class:"hint", style:"color:var(--danger)"}, state.errorMsg));
+
+  wrap.appendChild(card);
+  return wrap;
+}
+
+function renderPath(){
+  const card = el("div", {class:"report-card"});
+  card.appendChild(el("h2", {}, "Your 7-day plan"));
+  if (state.loadingMsg) card.appendChild(el("p", {class:"hint"}, state.loadingMsg));
+  if (state.learningPath){
+    const list = el("ul", {class:"path-list"});
+    state.learningPath.days.forEach(d=>{
+      const li = el("li", {}, [
+        el("div", {}, [el("div",{class:"d-title"}, `Day ${d.day} — ${d.title}`), el("div",{class:"d-desc"}, d.description)]),
+        d.day===1 ? el("button", {class:"btn small accent", onclick: async ()=>{
+          state.profile.minutes = 20;
+          state.topic = state.mode==="topic" ? state.topic : d.title;
+          if (state.mode!=="topic"){ state.mode="topic"; }
+          await beginLesson();
+        }}, "Start Day 1") : null,
+      ]);
+      list.appendChild(li);
+    });
+    card.appendChild(list);
+    card.appendChild(el("p", {class:"hint"}, "This prototype runs one live session at a time — pick Day 1 to begin. Returning tomorrow, your learning history is remembered."));
+  }
+  return card;
+}
+
+function renderLesson(){
+  const grid = el("div", {class:"lesson-grid"});
+  const seg = state.outline[state.segmentIdx];
+  const content = seg ? state.segmentCache[seg.id] : null;
+
+  const stage = el("div", {class:"stage"});
+  stage.appendChild(el("div", {class:"stage-top"}, [
+    el("span", {class:"seg-title"}, seg ? seg.title : "…"),
+    el("span", {class:"seg-kind"}, seg ? seg.kind : ""),
+  ]));
+
+  const row = el("div", {class:"avatar-visual-row"});
+  const avatarWrap = el("div", {class:"avatar-wrap"}, [
+    el("div", {html: avatarSvg(state.speaking)}),
+    el("div", {class:"status"}, state.speaking ? "speaking…" : (state.loadingMsg ? "" : "")),
+  ]);
+  row.appendChild(avatarWrap);
+
+  const visualPanel = el("div", {class:"visual-panel"});
+  if (content && content.visual && content.visual.type !== "none"){
+    const safeSvg = sanitizeSvg(content.visual.svg);
+    if (safeSvg) visualPanel.innerHTML = safeSvg;
+    else visualPanel.appendChild(el("div", {class:"visual-placeholder"}, content.visual.caption || "visual"));
+  } else {
+    visualPanel.appendChild(el("div", {class:"visual-placeholder"}, "—"));
+  }
+  row.appendChild(visualPanel);
+  stage.appendChild(row);
+
+  stage.appendChild(el("div", {class:"caption-rail"}, content ? content.onScreenText : (state.loadingMsg||"Loading…")));
+
+  if (content && content.question && content.question.type !== "none" && !state.currentFeedback){
+    const qCard = el("div", {class:"question-card"});
+    qCard.appendChild(el("div", {class:"q-prompt"}, content.question.prompt));
+    if (content.question.type === "mcq" && content.question.options){
+      content.question.options.forEach(opt=>{
+        qCard.appendChild(el("button", {class:"opt-btn"+(state.currentAnswerChoice===opt?" chosen":""), onclick: async ()=>{
+          state.currentAnswerChoice = opt;
+          render();
+          await submitAnswer(content.question, opt);
+        }}, opt));
+      });
+    } else {
+      const inputRow = el("div", {class:"short-ans-row"});
+      const inp = el("input", {type:"text", placeholder:"Type your answer…"});
+      inputRow.appendChild(inp);
+      inputRow.appendChild(el("button", {class:"btn small", onclick: async ()=>{
+        if (!inp.value.trim()) return;
+        await submitAnswer(content.question, inp.value);
+      }}, "Submit"));
+      qCard.appendChild(inputRow);
+    }
+    stage.appendChild(qCard);
+  } else if (content && content.question && content.question.type !== "none" && state.currentFeedback){
+    const fb = state.currentFeedback;
+    const box = el("div", {class:"question-card"});
+    box.appendChild(el("div", {class:"q-prompt"}, content.question.prompt));
+    box.appendChild(el("div", {class:"feedback-box "+(fb.correct?"correct":"incorrect")}, fb.feedback));
+    box.appendChild(el("button", {class:"btn small accent", style:"margin-top:10px", onclick: ()=>goToSegment(state.segmentIdx+1)}, "Continue"));
+    stage.appendChild(box);
+  }
+
+  if (!content?.question || content.question.type === "none"){
+    const controls = el("div", {class:"stage-controls"});
+    controls.appendChild(el("button", {class:"btn", disabled: state.loadingMsg? "disabled":null, onclick: ()=>goToSegment(state.segmentIdx+1)}, state.segmentIdx+1>=state.outline.length ? "Finish lesson":"Next"));
+    controls.appendChild(el("button", {class:"btn ghost", onclick: ()=>playCurrentSegment()}, "Repeat"));
+    controls.appendChild(el("button", {class:"btn ghost", onclick: ()=>{ if(window.speechSynthesis) window.speechSynthesis.cancel(); state.speaking=false; render(); }}, "Stop"));
+    stage.appendChild(controls);
+  }
+
+  const followRow = el("div", {class:"followup-row"});
+  const followInput = el("input", {type:"text", placeholder:"Ask a question about this lesson anytime…"});
+  followRow.appendChild(followInput);
+  followRow.appendChild(el("button", {class:"btn ghost", onclick: async ()=>{
+    if (!followInput.value.trim()) return;
+    const q = followInput.value;
+    followInput.value = "";
+    state.loadingMsg = "Answering your question…";
+    render();
+    try{
+      const res = await answerFollowUp(q);
+      state.loadingMsg = "";
+      speak(res.answer, state.profile.langCode, ()=>{state.speaking=true;render();}, ()=>{state.speaking=false;render();});
+      window.__lastFollowupAnswer = res.answer;
+      render();
+      alertBanner(res.answer);
+    }catch(e){
+      state.loadingMsg = "";
+      state.errorMsg = "Could not answer that right now.";
+      render();
+    }
+  }}, "Ask"));
+  stage.appendChild(followRow);
+  if (state.errorMsg) stage.appendChild(el("p", {class:"hint", style:"color:#e2a58a"}, state.errorMsg));
+
+  grid.appendChild(stage);
+
+  const rail = el("div", {});
+  const progCard = el("div", {class:"rail-card"});
+  progCard.appendChild(el("h3", {}, "Lesson progress"));
+  const list = el("ul", {class:"seg-list"});
+  state.outline.forEach((s,i)=>{
+    list.appendChild(el("li", {class: i<state.segmentIdx?"done":(i===state.segmentIdx?"active":"")}, s.title));
+  });
+  progCard.appendChild(list);
+  rail.appendChild(progCard);
+
+  const scoreCard = el("div", {class:"rail-card"});
+  scoreCard.appendChild(el("h3", {}, "So far"));
+  const correct = state.scoreLog.filter(s=>s.correct).length;
+  scoreCard.appendChild(el("div", {class:"score-chip"}, [document.createTextNode("Answered correctly: "), el("b",{},`${correct}/${state.scoreLog.length}`)]));
+  scoreCard.appendChild(el("div", {}, [document.createTextNode(" ")]));
+  Object.keys(state.strongConcepts).forEach(c=>scoreCard.appendChild(el("span",{class:"strong-tag"}, c)));
+  Object.keys(state.weakConcepts).forEach(c=>scoreCard.appendChild(el("span",{class:"weak-tag"}, c)));
+  scoreCard.appendChild(el("div", {class:"hint", style:"margin-top:8px"}, `Adaptive level: ${state.effectiveLevel}`));
+  rail.appendChild(scoreCard);
+
+  grid.appendChild(rail);
+  return grid;
+}
+
+function alertBanner(text){ /* answer already shown via caption + spoken; no-op placeholder for future toast */ }
+
+function renderAssessment(){
+  const card = el("div", {class:"report-card"});
+  card.appendChild(el("h2", {}, "Final check"));
+  if (state.loadingMsg) card.appendChild(el("p", {class:"hint"}, state.loadingMsg));
+  if (state.finalQuiz){
+    state.finalQuiz.forEach(q=>{
+      const qBlock = el("div", {class:"field"});
+      qBlock.appendChild(el("label", {}, q.prompt));
+      if (q.type === "mcq" && q.options){
+        q.options.forEach(opt=>{
+          qBlock.appendChild(el("button", {class:"opt-btn", style:"color:var(--ink);border-color:var(--ink-soft);"+(state.finalAnswers[q.id]===opt?"border-color:var(--accent-deep);background:rgba(193,133,43,0.12);":""), onclick:()=>{state.finalAnswers[q.id]=opt;render();}}, opt));
+        });
+      } else {
+        qBlock.appendChild(el("input", {type:"text", oninput:(e)=>{state.finalAnswers[q.id]=e.target.value;}}));
+      }
+      card.appendChild(qBlock);
+    });
+    card.appendChild(el("button", {class:"btn accent", onclick: submitFinalQuiz}, "Submit final check"));
+  }
+  return card;
+}
+
+function renderReport(){
+  const card = el("div", {class:"report-card"});
+  card.appendChild(el("h2", {}, "Learning report"));
+  if (state.loadingMsg) card.appendChild(el("p", {class:"hint"}, state.loadingMsg));
+  if (state.report){
+    card.appendChild(el("div", {class:"report-score"}, state.report.score+"%"));
+    const grid = el("div", {class:"report-grid"});
+    grid.appendChild(el("div", {}, [el("h4",{},"Strong areas"), ...(state.report.strengths||[]).map(s=>el("span",{class:"strong-tag"}, s))]));
+    grid.appendChild(el("div", {}, [el("h4",{},"Needs improvement"), ...(state.report.weakAreas||[]).map(s=>el("span",{class:"weak-tag"}, s))]));
+    card.appendChild(grid);
+    card.appendChild(el("h4", {}, "Recommendation"));
+    card.appendChild(el("p", {}, state.report.recommendation));
+    card.appendChild(el("h4", {}, "Suggested next topic"));
+    card.appendChild(el("p", {}, state.report.nextTopic));
+    card.appendChild(el("h4", {}, "Revision notes"));
+    card.appendChild(el("ul", {class:"notes-list"}, (state.report.notes||[]).map(n=>el("li",{},n))));
+    card.appendChild(el("button", {class:"btn accent", style:"margin-top:16px", onclick: ()=>{ location.reload(); }}, "Start another lesson"));
+  }
+  return card;
+}
+
+/* ============================= MAIN RENDER ============================= */
+function render(){
+  const app = document.getElementById("app");
+  app.innerHTML = "";
+  app.appendChild(renderTopbar());
+  if (state.screen === "setup") app.appendChild(renderSetup());
+  else if (state.screen === "path") app.appendChild(renderPath());
+  else if (state.screen === "lesson") app.appendChild(renderLesson());
+  else if (state.screen === "assessment") app.appendChild(renderAssessment());
+  else if (state.screen === "report") app.appendChild(renderReport());
+}
+
+(async function init(){
+  await loadLearnerProfile();
+  render();
+})();
+</script>
+</body>
+</html>
