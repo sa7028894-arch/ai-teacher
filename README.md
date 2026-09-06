@@ -95,17 +95,17 @@ Why segment-by-segment generation instead of planning the whole lesson upfront? 
 
 Why force a misconception name before re-teaching? Without it, a model can just reword the same explanation and call that "adaptive." Requiring a named misconception is what keeps reexplain genuinely different from continue.
 
-## What's deliberately left out
+## What's deliberately left out:-
 
 - No accounts or cross-device sync -- localStorage is per-browser by design; scope stayed on the teaching loop itself, not auth infrastructure.
 - No real vector database for material grounding -- retrieval is keyword-overlap scoring over chunked text, disclosed rather than dressed up as full RAG. A drop-in embeddings upgrade is possible but out of scope for this build.
 - No exported video file -- the lesson plays live (animated avatar + synced TTS) rather than rendering to .mp4; reliable in-browser audio capture isn't consistent enough across browsers to promise. Screen-recording a live session is the intended path to a demo video.
 - 7-day plan mode generates the multi-day outline and lets the learner start Day 1 as a normal session; it doesn't yet auto-schedule days 2-7.
 
-## Extensibility
+## Extensibility:-
 
 The four-move contract (continue / reexplain / simplify_remaining / advance_remaining) and the JSON schemas in app/api/teach/route.js aren't specific to any one subject -- they're driven entirely by the outline and segment prompts in public/teach.html. Retargeting the retrieval step at a real vector store, or swapping the model provider (the backend already isolates all Groq-specific code to one route file), wouldn't require touching the teaching loop itself.
 
-## License
+## License:-
 
 MIT -- see LICENSE.
