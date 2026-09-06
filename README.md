@@ -6,7 +6,7 @@ Built for **AI Innovation Hackathon 2026**, hosted by Bharat Academix.
 
 ![Next.js](https://img.shields.io/badge/Next.js-black?logo=next.js) ![Groq](https://img.shields.io/badge/Groq-orange) ![License-MIT](https://img.shields.io/badge/License-MIT-green)
 
-**Try it live -> ** *(deployment in progress -- see Local setup below to run it now)*
+**Try it live -> https://ai-teacher-ot48.onrender.com/teach.html**
 
 ## What this is
 
