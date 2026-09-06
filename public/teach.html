@@ -394,7 +394,7 @@ function speak(text, langCode, onStart, onEnd){
   window.speechSynthesis.speak(utter);
 }
 
-/* ============================= PROMPT BUILDERS ============================= */
+
 function langName(){ return state.profile.language; }
 
 async function generateOutline(){
@@ -516,7 +516,7 @@ Use the exact score value given — do not recalculate it. strengths/weakAreas: 
   });
 }
 
-/* ============================= FLOW CONTROL ============================= */
+
 function stepEffectiveLevel(direction){
   const idx = LEVELS.indexOf(state.effectiveLevel);
   const next = direction === "up" ? Math.min(idx+1, LEVELS.length-1) : Math.max(idx-1, 0);
@@ -626,7 +626,7 @@ async function submitFinalQuiz(){
   render();
 }
 
-/* ============================= RENDER HELPERS ============================= */
+
 function sanitizeSvg(svg){
   if (!svg) return null;
   if (!/^\s*<svg/i.test(svg)) return null;
@@ -662,7 +662,7 @@ function avatarSvg(speaking){
   </svg>`;
 }
 
-/* ============================= SCREENS ============================= */
+
 function renderTopbar(){
   const bar = el("div", {class:"topbar"});
   bar.appendChild(el("div", {class:"brand"}, [
@@ -969,7 +969,7 @@ function renderReport(){
   return card;
 }
 
-/* ============================= MAIN RENDER ============================= */
+
 function render(){
   const app = document.getElementById("app");
   app.innerHTML = "";
