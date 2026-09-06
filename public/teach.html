@@ -240,18 +240,18 @@ const state = {
   topic: "",
   profile: { level: "beginner", minutes: 20, language: "English", langCode: "en-US", style: "" },
   effectiveLevel: "beginner",
-  outline: [],              // [{id,title,kind}]
+  outline: [],          
   segmentIdx: 0,
-  segmentCache: {},         // id -> content json
-  segmentStatus: [],        // "pending"|"done"
+  segmentCache: {},         
+  segmentStatus: [],        
   speaking: false,
   currentAnswerChoice: null,
   currentFeedback: null,
-  scoreLog: [],             // {conceptTag, correct}
+  scoreLog: [],       
   weakConcepts: {},
   strongConcepts: {},
   memoryLine: "",
-  learningPath: null,       // {days:[...]}
+  learningPath: null,  
   finalQuiz: null,
   finalAnswers: {},
   report: null,
@@ -260,7 +260,7 @@ const state = {
   learnerProfileStore: null,
 };
 
-/* ============================= CLAUDE HELPER ============================= */
+
 async function callClaude(system, user, {retries=1} = {}){
   for (let attempt=0; attempt<=retries; attempt++){
     try{
@@ -278,7 +278,7 @@ async function callClaude(system, user, {retries=1} = {}){
   }
 }
 
-/* ============================= MATERIAL PROCESSING (RAG-lite) ============================= */
+
 function chunkText(text, size=700){
   const words = text.split(/\s+/);
   const chunks = [];
@@ -305,7 +305,7 @@ function retrieveTopChunks(query, k=3){
   const scored = state.materialChunks.map((c,i)=>({i, c, s:scoreChunk(query,c)}));
   scored.sort((a,b)=>b.s-a.s);
   const top = scored.slice(0,k).filter(x=>x.s>0);
-  if (top.length === 0) return state.materialChunks.slice(0,k); // fallback: first chunks
+  if (top.length === 0) return state.materialChunks.slice(0,k); 
   return top.map(x=>x.c);
 }
 
@@ -336,7 +336,7 @@ async function extractMaterialText(file){
   throw new Error("Unsupported file type. Use .txt, .pdf, or .docx — or paste the text directly.");
 }
 
-/* ============================= LEARNER PROFILE STORAGE ============================= */
+
 async function loadLearnerProfile(){
   try{
     const raw = localStorage.getItem("learner_profile");
@@ -360,7 +360,7 @@ async function resetLearnerProfile(){
   render();
 }
 
-/* ============================= SPEECH ============================= */
+
 let voicesCache = [];
 function loadVoices(){
   voicesCache = window.speechSynthesis ? window.speechSynthesis.getVoices() : [];
